@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IronPulse — Membership Plans</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+  <nav class="navbar" id="navbar">
+    <div class="nav-brand">
+      <a href="index.html" style="text-decoration:none;display:flex;align-items:center;gap:8px;">
+        <span class="brand-icon">⚡</span><span class="brand-text">IRONPULSE</span>
+      </a>
+    </div>
+    <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="membership.html" class="active">Membership</a></li>
+      <li><a href="tracker.html">Tracker</a></li>
+      <li><a href="login.html" class="btn-nav">Login</a></li>
+    </ul>
+  </nav>
+
+  <div class="page-wrapper">
+    <div class="container">
+
+      <div class="page-header centered">
+        <p class="section-tag">PICK YOUR PLAN</p>
+        <h1 class="page-title">Membership Plans</h1>
+        <p class="page-sub">No contracts. Cancel anytime. Start crushing goals today.</p>
+        <!-- Toggle billing -->
+        <div class="billing-toggle">
+          <span id="lblMonthly" class="toggle-active">Monthly</span>
+          <label class="switch">
+            <input type="checkbox" id="billingToggle" onchange="toggleBilling()"/>
+            <span class="slider"></span>
+          </label>
+          <span id="lblAnnual">Annual <span class="save-badge">Save 20%</span></span>
+        </div>
+      </div>
+
+      <!-- Plans Grid -->
+      <div class="plans-grid">
+
+        <div class="plan-card" id="plan-basic">
+          <div class="plan-tier">BASIC</div>
+          <div class="plan-price">
+            <span class="plan-currency">₹</span>
+            <span class="plan-amount" data-monthly="999" data-annual="799">999</span>
+            <span class="plan-period">/mo</span>
+          </div>
+          <ul class="plan-features">
+            <li class="yes">✓ Gym floor access (6AM–10PM)</li>
+            <li class="yes">✓ Locker room & showers</li>
+            <li class="yes">✓ 2 group classes/week</li>
+            <li class="yes">✓ Basic workout tracker</li>
+            <li class="no">✗ Personal trainer sessions</li>
+            <li class="no">✗ Nutrition guidance</li>
+            <li class="no">✗ 24/7 access</li>
+          </ul>
+          <button class="btn-ghost plan-btn" onclick="selectPlan('basic', this)">Choose Basic</button>
+        </div>
+
+        <div class="plan-card featured" id="plan-pro">
+          <div class="plan-badge">MOST POPULAR</div>
+          <div class="plan-tier">PRO</div>
+          <div class="plan-price">
+            <span class="plan-currency">₹</span>
+            <span class="plan-amount" data-monthly="1799" data-annual="1439">1,799</span>
+            <span class="plan-period">/mo</span>
+          </div>
+          <ul class="plan-features">
+            <li class="yes">✓ Gym floor access (5AM–11PM)</li>
+            <li class="yes">✓ Locker room & showers</li>
+            <li class="yes">✓ Unlimited group classes</li>
+            <li class="yes">✓ Full fitness tracker</li>
+            <li class="yes">✓ 2 PT sessions/month</li>
+            <li class="yes">✓ Nutrition guidance</li>
+            <li class="no">✗ 24/7 access</li>
+          </ul>
+          <button class="btn-primary plan-btn" onclick="selectPlan('pro', this)">Choose Pro</button>
+        </div>
+
+        <div class="plan-card" id="plan-elite">
+          <div class="plan-tier">ELITE</div>
+          <div class="plan-price">
+            <span class="plan-currency">₹</span>
+            <span class="plan-amount" data-monthly="2999" data-annual="2399">2,999</span>
+            <span class="plan-period">/mo</span>
+          </div>
+          <ul class="plan-features">
+            <li class="yes">✓ 24/7 gym access</li>
+            <li class="yes">✓ Premium locker + towel service</li>
+            <li class="yes">✓ Unlimited all classes</li>
+            <li class="yes">✓ Advanced analytics dashboard</li>
+            <li class="yes">✓ 8 PT sessions/month</li>
+            <li class="yes">✓ Custom nutrition plan</li>
+            <li class="yes">✓ Spa & recovery zone</li>
+          </ul>
+          <button class="btn-ghost plan-btn" onclick="selectPlan('elite', this)">Choose Elite</button>
+        </div>
+
+      </div>
+
+      <!-- Confirmation Toast -->
+      <div id="planToast" class="plan-toast hidden"></div>
+
+      <!-- Compare Table -->
+      <div class="compare-section">
+        <h2 class="section-title">Full Comparison</h2>
+        <div class="table-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Basic</th>
+                <th class="th-highlight">Pro</th>
+                <th>Elite</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Gym Hours</td><td>6AM–10PM</td><td class="td-highlight">5AM–11PM</td><td>24/7</td></tr>
+              <tr><td>Group Classes</td><td>2/week</td><td class="td-highlight">Unlimited</td><td>Unlimited</td></tr>
+              <tr><td>PT Sessions</td><td>—</td><td class="td-highlight">2/month</td><td>8/month</td></tr>
+              <tr><td>Nutrition Plan</td><td>—</td><td class="td-highlight">Basic</td><td>Custom</td></tr>
+              <tr><td>Fitness Tracker</td><td>Basic</td><td class="td-highlight">Full</td><td>Advanced</td></tr>
+              <tr><td>Spa Access</td><td>—</td><td class="td-highlight">—</td><td>✓</td></tr>
+              <tr><td>Towel Service</td><td>—</td><td class="td-highlight">—</td><td>✓</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand"><span class="brand-icon">⚡</span><span class="brand-text">IRONPULSE</span></div>
+      <p class="footer-copy">© 2026 IronPulse Gym. Built for champions.</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

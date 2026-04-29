@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IronPulse — Dashboard</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+</head>
+<body>
+ 
+  <nav class="navbar" id="navbar">
+    <div class="nav-brand">
+      <a href="index.html" style="text-decoration:none;display:flex;align-items:center;gap:8px;">
+        <span class="brand-icon">⚡</span><span class="brand-text">IRONPULSE</span>
+      </a>
+    </div>
+    <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="dashboard.html" class="active">Dashboard</a></li>
+      <li><a href="membership.html">Membership</a></li>
+      <li><a href="tracker.html">Tracker</a></li>
+      <li><a href="login.html" class="btn-nav">Logout</a></li>
+    </ul>
+  </nav>
+ 
+  <div class="page-wrapper">
+    <div class="container">
+
+      <div class="page-header">
+        <div>
+          <p class="section-tag">WELCOME BACK</p>
+          <h1 class="page-title" id="dashGreeting">Hello, Champion! 💪</h1>
+        </div>
+        <div class="header-date" id="headerDate"></div>
+      </div>
+
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-card-icon" style="background:var(--accent-dim)">🔥</div>
+          <div>
+            <p class="stat-card-num" id="streakCount">7</p>
+            <p class="stat-card-label">Day Streak</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon" style="background:#1a3a2a">💪</div>
+          <div>
+            <p class="stat-card-num" id="workoutsCount">24</p>
+            <p class="stat-card-label">Workouts Done</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon" style="background:#1a1a3a">⚡</div>
+          <div>
+            <p class="stat-card-num" id="caloriesCount">12,840</p>
+            <p class="stat-card-label">Calories Burned</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon" style="background:#3a1a1a">🎯</div>
+          <div>
+            <p class="stat-card-num" id="goalsCount">3/5</p>
+            <p class="stat-card-label">Goals Hit</p>
+          </div>
+        </div>
+      </div>
+ 
+
+      <div class="dash-grid">
+ 
+
+        <div class="dash-card wide">
+          <h3 class="card-title">Weekly Activity</h3>
+          <div class="activity-chart" id="activityChart"></div>
+          <div class="chart-labels" id="chartLabels"></div>
+        </div>
+ 
+        <div class="dash-card membership-card-dash">
+          <h3 class="card-title">Membership</h3>
+          <div class="membership-badge" id="memberBadge">PRO</div>
+          <p class="membership-status">Active — Renews in <strong id="renewDays">18 days</strong></p>
+          <div class="membership-bar-wrap">
+            <div class="membership-bar" id="memberBar" style="width:60%"></div>
+          </div>
+          <p class="membership-hint">60% of billing cycle used</p>
+          <a href="membership.html" class="btn-ghost small">Manage Plan →</a>
+        </div>
+ 
+
+        <div class="dash-card">
+          <h3 class="card-title">Recent Workouts</h3>
+          <ul class="workout-list" id="recentWorkouts"></ul>
+          <a href="tracker.html" class="btn-ghost small">View All →</a>
+        </div>
+ 
+
+        <div class="dash-card">
+          <h3 class="card-title">This Week's Goals</h3>
+          <ul class="goals-list" id="goalsList"></ul>
+          <a href="tracker.html" class="btn-ghost small">Track Workout →</a>
+        </div>
+ 
+      </div>
+    </div>
+  </div>
+ 
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand"><span class="brand-icon">⚡</span><span class="brand-text">IRONPULSE</span></div>
+      <p class="footer-copy">© 2026 IronPulse Gym. Built for champions.</p>
+    </div>
+  </footer>
+ 
+  <script src="app.js"></script>
+</body>
+</html>

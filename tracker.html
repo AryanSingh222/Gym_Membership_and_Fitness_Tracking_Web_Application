@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IronPulse — Workout Tracker</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+  <nav class="navbar" id="navbar">
+    <div class="nav-brand">
+      <a href="index.html" style="text-decoration:none;display:flex;align-items:center;gap:8px;">
+        <span class="brand-icon">⚡</span><span class="brand-text">IRONPULSE</span>
+      </a>
+    </div>
+    <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="membership.html">Membership</a></li>
+      <li><a href="tracker.html" class="active">Tracker</a></li>
+      <li><a href="login.html" class="btn-nav">Login</a></li>
+    </ul>
+  </nav>
+
+  <div class="page-wrapper">
+    <div class="container">
+
+      <div class="page-header">
+        <div>
+          <p class="section-tag">FITNESS TRACKER</p>
+          <h1 class="page-title">Log Your Workout</h1>
+        </div>
+      </div>
+
+    
+      <div class="tracker-grid">
+
+   
+        <div class="dash-card tracker-form-card">
+          <h3 class="card-title">Add Workout</h3>
+          <div id="trackerMsg" class="form-msg hidden"></div>
+
+          <div class="form-group">
+            <label>Workout Type</label>
+            <select id="workoutType" class="form-input">
+              <option value="">-- Select Type --</option>
+              <option>💪 Strength Training</option>
+              <option>🏃 Cardio / Running</option>
+              <option>🧘 Yoga / Flexibility</option>
+              <option>🚴 Cycling</option>
+              <option>🥊 Boxing / HIIT</option>
+              <option>🏊 Swimming</option>
+              <option>🏋️ CrossFit</option>
+              <option>Other</option>
+            </select>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label>Duration (min)</label>
+              <input type="number" id="workoutDuration" class="form-input" placeholder="45" min="1" max="300"/>
+            </div>
+            <div class="form-group">
+              <label>Calories Burned</label>
+              <input type="number" id="workoutCalories" class="form-input" placeholder="300" min="1"/>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="workoutDate" class="form-input"/>
+            </div>
+            <div class="form-group">
+              <label>Intensity</label>
+              <select id="workoutIntensity" class="form-input">
+                <option value="low">🟢 Low</option>
+                <option value="medium" selected>🟡 Medium</option>
+                <option value="high">🔴 High</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Notes (optional)</label>
+            <textarea id="workoutNotes" class="form-input" rows="2" placeholder="e.g. Bench press PR, felt strong..."></textarea>
+          </div>
+
+          <button class="btn-primary full" onclick="logWorkout()">Log Workout ⚡</button>
+        </div>
+
+      
+        <div class="tracker-side">
+          <div class="dash-card">
+            <h3 class="card-title">This Month</h3>
+            <div class="month-stats">
+              <div class="month-stat">
+                <span class="month-stat-num" id="totalWorkouts">0</span>
+                <span class="month-stat-label">Workouts</span>
+              </div>
+              <div class="month-stat">
+                <span class="month-stat-num" id="totalMinutes">0</span>
+                <span class="month-stat-label">Minutes</span>
+              </div>
+              <div class="month-stat">
+                <span class="month-stat-num" id="totalCalories">0</span>
+                <span class="month-stat-label">Calories</span>
+              </div>
+            </div>
+          </div>
+
+     
+          <div class="dash-card">
+            <h3 class="card-title">Weekly Goal</h3>
+            <p class="goal-target">Target: <strong id="weeklyTarget">5 workouts</strong></p>
+            <div class="goal-bar-wrap">
+              <div class="goal-bar" id="goalBar"></div>
+            </div>
+            <p class="goal-progress" id="goalProgress">0 / 5 completed</p>
+            <div class="goal-setter">
+              <input type="range" min="1" max="7" value="5" id="goalSlider" oninput="updateGoalTarget(this.value)"/>
+              <span id="sliderLabel">5 days</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+   
+      <div class="dash-card" style="margin-top:24px;">
+        <div class="card-header-row">
+          <h3 class="card-title">Workout History</h3>
+          <button class="btn-ghost small" onclick="clearWorkouts()">Clear All</button>
+        </div>
+        <div id="workoutLog" class="workout-log-area">
+          <p class="empty-state">No workouts logged yet. Add your first one! 💪</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand"><span class="brand-icon">⚡</span><span class="brand-text">IRONPULSE</span></div>
+      <p class="footer-copy">© 2026 IronPulse Gym. Built for champions.</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
