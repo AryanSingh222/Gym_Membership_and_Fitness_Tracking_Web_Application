@@ -1,102 +1,178 @@
-(function () {
-  const nav = document.getElementById('navbar');
-  const hamburger = document.getElementById('hamburger');
-  const navLinks = document.getElementById('navLinks');
+const Session = (() => {
+  const KEY = 'ip_session';
 
-  if (nav) {
-    window.addEventListener('scroll', () => {
-      nav.classList.toggle('scrolled', window.scrollY > 20);
-    });
-  }
-
-  if (hamburger && navLinks) {
-    hamburger.addEventListener('click', () => {
-      navLinks.classList.toggle('open');
-    });
-
-    navLinks.querySelectorAll('a').forEach(a => {
-      a.addEventListener('click', () => navLinks.classList.remove('open'));
-    });
-  }
+  return {
+    save(data)   { localStorage.setItem(KEY, JSON.stringify(data)); },
+    load()       { try { return JSON.parse(localStorage.getItem(KEY)) ?? null; } catch { return null; } },
+    clear()      { localStorage.removeItem(KEY); },
+    isLoggedIn() { return this.load() !== null; },
+    getUser()    { return this.load()?.user         ?? null; },
+    getToken()   { return this.load()?.accessToken  ?? null; },
+    getRefresh() { return this.load()?.refreshToken ?? null; },
+    updateUser(patch) {
+      const s = this.load();
+      if (!s) return;
+      s.user = { ...s.user, ...patch };
+      this.save(s);
+    },
+  };
 })();
 
 
+const Auth = (() => {
+  const PROTECTED  = ['dashboard.html', 'tracker.html', 'membership.html'];
+  const GUEST_ONLY = ['login.html'];
+
+  function currentPage() {
+    return window.location.pathname.split('/').pop() || 'index.html';
+  }
+
+  function init() {
+    const page     = currentPage();
+    const loggedIn = Session.isLoggedIn();
+
+    // ── Route guards ─────────────────────────────────────────
+    if (PROTECTED.includes(page) && !loggedIn) {
+      sessionStorage.setItem('ip_redirect', page);   // remember destination
+      window.location.replace('login.html');
+      return false;
+    }
+    if (GUEST_ONLY.includes(page) && loggedIn) {
+      window.location.replace('dashboard.html');
+      return false;
+    }
+
+    buildNavbar(loggedIn);
+    return true;
+  }
+
+  function buildNavbar(loggedIn) {
+    const ul = document.getElementById('navLinks');
+    if (!ul) return;
+
+    const page = currentPage();
+    const user = Session.getUser();
+    const name = user?.firstName || user?.name?.split(' ')[0] || 'You';
+
+    const active = (p) => page === p ? 'class="active"' : '';
+
+    if (loggedIn) {
+      ul.innerHTML = `
+        <li><a href="index.html"      ${active('index.html')}>Home</a></li>
+        <li><a href="dashboard.html"  ${active('dashboard.html')}>Dashboard</a></li>
+        <li><a href="membership.html" ${active('membership.html')}>Membership</a></li>
+        <li><a href="tracker.html"    ${active('tracker.html')}>Tracker</a></li>
+        <li><span class="nav-user">👤 ${name}</span></li>
+        <li><a href="#" class="btn-nav" id="logoutBtn">Logout</a></li>
+      `;
+      document.getElementById('logoutBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        logout();
+      });
+    } else {
+      ul.innerHTML = `
+        <li><a href="index.html"      ${active('index.html')}>Home</a></li>
+        <li><a href="membership.html" ${active('membership.html')}>Membership</a></li>
+        <li><a href="login.html" class="btn-nav ${page === 'login.html' ? 'active' : ''}">Login</a></li>
+      `;
+    }
+
+    ul.querySelectorAll('a').forEach(a =>
+      a.addEventListener('click', () => ul.classList.remove('open'))
+    );
+  }
+
+  function logout() {
+    Session.clear();
+    window.location.replace('login.html');
+  }
+
+  return { init, logout };
+})();
+
+(function () {
+  const nav       = document.getElementById('navbar');
+  const hamburger = document.getElementById('hamburger');
+  const navLinks  = document.getElementById('navLinks');
+
+  if (nav) {
+    window.addEventListener('scroll', () =>
+      nav.classList.toggle('scrolled', window.scrollY > 20)
+    );
+  }
+  if (hamburger && navLinks) {
+    hamburger.addEventListener('click', () =>
+      navLinks.classList.toggle('open')
+    );
+  }
+})();
+
 function showMsg(id, text, type) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.textContent = text;
-  el.className = `form-msg ${type}`;
+  const e = document.getElementById(id);
+  if (!e) return;
+  e.textContent = text;
+  e.className   = `form-msg ${type}`;
 }
 
 function togglePw(id, btn) {
   const input = document.getElementById(id);
   if (!input) return;
-  if (input.type === 'password') {
-    input.type = 'text';
-    btn.textContent = '🙈';
-  } else {
-    input.type = 'password';
-    btn.textContent = '👁';
-  }
+  input.type      = input.type === 'password' ? 'text' : 'password';
+  btn.textContent = input.type === 'password' ? '👁' : '🙈';
 }
 
+const el = (id) => document.getElementById(id);
 
 function switchTab(tab) {
-  const loginForm = document.getElementById('loginForm');
-  const signupForm = document.getElementById('signupForm');
-  const tabLogin = document.getElementById('tabLogin');
-  const tabSignup = document.getElementById('tabSignup');
-  if (!loginForm) return;
-
-  if (tab === 'login') {
-    loginForm.classList.remove('hidden');
-    signupForm.classList.add('hidden');
-    tabLogin.classList.add('active');
-    tabSignup.classList.remove('active');
-  } else {
-    signupForm.classList.remove('hidden');
-    loginForm.classList.add('hidden');
-    tabSignup.classList.add('active');
-    tabLogin.classList.remove('active');
-  }
+  const isLogin = tab === 'login';
+  el('loginForm') ?.classList.toggle('hidden', !isLogin);
+  el('signupForm')?.classList.toggle('hidden',  isLogin);
+  el('tabLogin')  ?.classList.toggle('active',  isLogin);
+  el('tabSignup') ?.classList.toggle('active', !isLogin);
 }
 
 function handleLogin() {
-  const email = document.getElementById('loginEmail')?.value.trim();
-  const pass = document.getElementById('loginPassword')?.value;
+  const email = el('loginEmail')?.value.trim();
+  const pass  = el('loginPassword')?.value;
 
   if (!email || !pass) {
     showMsg('loginMsg', '⚠ Please fill in all fields.', 'error');
     return;
   }
 
-
+  // Demo account
   if (email === 'demo@ironpulse.com' && pass === 'demo123') {
-    showMsg('loginMsg', '✅ Login successful! Redirecting...', 'success');
-    localStorage.setItem('ip_user', JSON.stringify({ name: 'Champion', email, plan: 'pro' }));
-    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+    _onLoginSuccess({
+      user: { id: 'demo-001', firstName: 'Champion', lastName: 'Demo',
+              name: 'Champion Demo', email, plan: 'pro', role: 'member' },
+      accessToken:  'demo-access-token',
+      refreshToken: 'demo-refresh-token',
+    }, 'loginMsg');
     return;
   }
 
-
   const users = JSON.parse(localStorage.getItem('ip_users') || '[]');
   const found = users.find(u => u.email === email && u.password === pass);
+
   if (found) {
-    showMsg('loginMsg', '✅ Login successful! Redirecting...', 'success');
-    localStorage.setItem('ip_user', JSON.stringify(found));
-    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+    const { password, ...safeUser } = found;
+    _onLoginSuccess({
+      user: safeUser,
+      accessToken:  'local-' + Date.now(),
+      refreshToken: 'local-refresh-' + Date.now(),
+    }, 'loginMsg');
   } else {
     showMsg('loginMsg', '✗ Invalid credentials. Try demo@ironpulse.com / demo123', 'error');
   }
 }
 
 function handleSignup() {
-  const first = document.getElementById('firstName')?.value.trim();
-  const last = document.getElementById('lastName')?.value.trim();
-  const email = document.getElementById('signupEmail')?.value.trim();
-  const pass = document.getElementById('signupPassword')?.value;
-  const plan = document.getElementById('planSelect')?.value;
-  const agree = document.getElementById('agreeTerms')?.checked;
+  const first = el('firstName')?.value.trim();
+  const last  = el('lastName')?.value.trim();
+  const email = el('signupEmail')?.value.trim().toLowerCase();
+  const pass  = el('signupPassword')?.value;
+  const plan  = el('planSelect')?.value || 'basic';
+  const agree = el('agreeTerms')?.checked;
 
   if (!first || !last || !email || !pass) {
     showMsg('signupMsg', '⚠ Please fill in all required fields.', 'error');
@@ -117,315 +193,277 @@ function handleSignup() {
     return;
   }
 
-  const newUser = { name: `${first} ${last}`, email, password: pass, plan };
+  const newUser = {
+    id: 'u-' + Date.now(),
+    firstName: first, lastName: last, name: `${first} ${last}`,
+    email, password: pass, plan, role: 'member',
+    createdAt: new Date().toISOString(),
+  };
   users.push(newUser);
   localStorage.setItem('ip_users', JSON.stringify(users));
-  localStorage.setItem('ip_user', JSON.stringify(newUser));
 
-  showMsg('signupMsg', `✅ Account created! Welcome, ${first}! Redirecting...`, 'success');
-  setTimeout(() => { window.location.href = 'dashboard.html'; }, 1400);
+  showMsg('signupMsg', `✅ Welcome, ${first}! Setting up your account...`, 'success');
+
+  const { password, ...safeUser } = newUser;
+  setTimeout(() => _onLoginSuccess({
+    user: safeUser,
+    accessToken:  'local-' + Date.now(),
+    refreshToken: 'local-refresh-' + Date.now(),
+  }, 'signupMsg'), 800);
+}
+
+function _onLoginSuccess(sessionData, msgId) {
+  Session.save(sessionData);
+  showMsg(msgId, '✅ Login successful! Redirecting...', 'success');
+
+  const intended = sessionStorage.getItem('ip_redirect') || 'dashboard.html';
+  sessionStorage.removeItem('ip_redirect');
+  setTimeout(() => window.location.replace(intended), 900);
 }
 
 
 function initDashboard() {
-  const greeting = document.getElementById('dashGreeting');
-  const dateEl = document.getElementById('headerDate');
+  if (!el('dashGreeting')) return;
 
-  if (!greeting) return;
+  const user  = Session.getUser();
+  const name  = user?.firstName || user?.name?.split(' ')[0] || 'Champion';
+  const hour  = new Date().getHours();
+  const greet = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
+  el('dashGreeting').textContent = `${greet}, ${name}! 💪`;
 
-
-  const user = JSON.parse(localStorage.getItem('ip_user') || '{}');
-  const name = user.name || 'Champion';
-  const hour = new Date().getHours();
-  const timeGreet = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
-  greeting.textContent = `${timeGreet}, ${name}! 💪`;
-
-
-  if (dateEl) {
-    const now = new Date();
-    dateEl.textContent = now.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  if (el('headerDate')) {
+    el('headerDate').textContent = new Date().toLocaleDateString('en-IN', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    });
   }
 
-
-  const chartEl = document.getElementById('activityChart');
-  const labelsEl = document.getElementById('chartLabels');
+  const chartEl  = el('activityChart');
+  const labelsEl = el('chartLabels');
   if (chartEl) {
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const vals = [45, 60, 0, 75, 50, 90, 30];
-    const max = Math.max(...vals);
-    const today = new Date().getDay(); // 0=Sun
-    const todayIdx = today === 0 ? 6 : today - 1;
+    const days      = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const wks       = getWorkouts();
+    const now       = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+    weekStart.setHours(0, 0, 0, 0);
 
-    chartEl.innerHTML = vals.map((v, i) => `
+    const vals = days.map((_, i) => {
+      const d = new Date(weekStart);
+      d.setDate(weekStart.getDate() + i);
+      const key = d.toISOString().slice(0, 10);
+      return wks.filter(w => w.date === key).reduce((s, w) => s + (w.duration || 0), 0);
+    });
+
+    const display  = vals.every(v => v === 0) ? [45, 60, 0, 75, 50, 90, 30] : vals;
+    const max      = Math.max(...display, 1);
+    const todayIdx = (now.getDay() + 6) % 7;
+
+    chartEl.innerHTML = display.map((v, i) => `
       <div class="bar-wrap">
-        <div class="bar ${i === todayIdx ? 'active' : ''}"
-          style="height:${v === 0 ? 4 : Math.max(8, (v / max) * 90)}px; background:${v === 0 ? 'var(--border)' : i === todayIdx ? 'var(--accent)' : '#3a3a4a'}"
-          data-val="${v ? v + ' min' : 'Rest'}"
-        ></div>
-      </div>
-    `).join('');
+        <div class="bar"
+          style="height:${v === 0 ? 4 : Math.max(8, (v / max) * 90)}px;
+                 background:${v === 0 ? 'var(--border)' : i === todayIdx ? 'var(--accent)' : '#3a3a4a'}"
+          data-val="${v ? v + ' min' : 'Rest'}"></div>
+      </div>`).join('');
 
-    if (labelsEl) {
-      labelsEl.innerHTML = days.map(d => `<span>${d}</span>`).join('');
-    }
+    if (labelsEl) labelsEl.innerHTML = days.map(d => `<span>${d}</span>`).join('');
   }
 
-
-  const wl = document.getElementById('recentWorkouts');
+  const wl = el('recentWorkouts');
   if (wl) {
-    const workouts = getWorkouts().slice(-3).reverse();
-    if (workouts.length === 0) {
-      const sample = [
-        { type: '💪 Strength Training', duration: 60, calories: 420 },
-        { type: '🏃 Cardio / Running', duration: 35, calories: 310 },
-        { type: '🧘 Yoga / Flexibility', duration: 45, calories: 150 }
-      ];
-      wl.innerHTML = sample.map(w => `
-        <li class="workout-item">
-          <span class="workout-item-icon">${w.type.split(' ')[0]}</span>
-          <div class="workout-item-info">
-            <div class="workout-item-name">${w.type.substring(2)}</div>
-            <div class="workout-item-meta">${w.duration} min</div>
-          </div>
-          <span class="workout-item-cal">${w.calories} kcal</span>
-        </li>
-      `).join('');
-    } else {
-      wl.innerHTML = workouts.map(w => `
-        <li class="workout-item">
-          <span class="workout-item-icon">💪</span>
-          <div class="workout-item-info">
-            <div class="workout-item-name">${w.type}</div>
-            <div class="workout-item-meta">${w.duration} min · ${w.date}</div>
-          </div>
-          <span class="workout-item-cal">${w.calories} kcal</span>
-        </li>
-      `).join('');
-    }
-  }
-
-
-  const gl = document.getElementById('goalsList');
-  if (gl) {
-    const goals = [
-      { text: 'Work out 5 days this week', done: true },
-      { text: 'Burn 2,000 calories', done: true },
-      { text: 'Complete 1 cardio session', done: false },
-      { text: 'Stretch for 15 min daily', done: false },
+    const recent = getWorkouts().slice(-3).reverse();
+    const sample = [
+      { type: '💪 Strength Training', duration: 60, calories: 420 },
+      { type: '🏃 Cardio / Running',   duration: 35, calories: 310 },
+      { type: '🧘 Yoga / Flexibility', duration: 45, calories: 150 },
     ];
-    gl.innerHTML = goals.map(g => `
-      <li class="goal-item">
-        <div class="goal-check ${g.done ? 'done' : ''}">✓</div>
-        <span class="goal-text ${g.done ? 'done' : ''}">${g.text}</span>
-      </li>
-    `).join('');
+    wl.innerHTML = (recent.length ? recent : sample).map(w => `
+      <li class="workout-item">
+        <span class="workout-item-icon">${getIcon(w.type)}</span>
+        <div class="workout-item-info">
+          <div class="workout-item-name">${w.type.replace(/^[^\s]+\s/, '')}</div>
+          <div class="workout-item-meta">${w.duration} min${w.date ? ' · ' + w.date : ''}</div>
+        </div>
+        <span class="workout-item-cal">${w.calories} kcal</span>
+      </li>`).join('');
   }
 
+  const gl = el('goalsList');
+  if (gl) {
+    const wks       = getWorkouts();
+    const now       = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+    weekStart.setHours(0, 0, 0, 0);
+    const thisWeek = wks.filter(w => new Date(w.date) >= weekStart).length;
+    const totalCal  = wks.reduce((s, w) => s + (w.calories || 0), 0);
+    const hasCardio = wks.some(w => /Cardio|Running/i.test(w.type));
 
-  const wks = getWorkouts();
-  const streak = document.getElementById('streakCount');
-  const total = document.getElementById('workoutsCount');
-  const cals = document.getElementById('caloriesCount');
-  const goals2 = document.getElementById('goalsCount');
+    [
+      { text: 'Work out 5 days this week', done: thisWeek >= 5 },
+      { text: 'Burn 2,000 calories',       done: totalCal >= 2000 },
+      { text: 'Complete 1 cardio session', done: hasCardio },
+      { text: 'Stretch for 15 min daily',  done: false },
+    ].forEach(g => {
+      gl.innerHTML += `
+        <li class="goal-item">
+          <div class="goal-check ${g.done ? 'done' : ''}">✓</div>
+          <span class="goal-text ${g.done ? 'done' : ''}">${g.text}</span>
+        </li>`;
+    });
+  }
 
-  if (total) total.textContent = 24 + wks.length;
-  if (cals) {
-    const userCals = wks.reduce((s, w) => s + (parseInt(w.calories) || 0), 0);
-    cals.textContent = (12840 + userCals).toLocaleString('en-IN');
+  const wks     = getWorkouts();
+  const totalCal = wks.reduce((s, w) => s + (w.calories || 0), 0);
+  if (el('workoutsCount')) el('workoutsCount').textContent = 24 + wks.length;
+  if (el('caloriesCount')) el('caloriesCount').textContent = (12840 + totalCal).toLocaleString('en-IN');
+
+  if (el('streakCount')) {
+    const dates = [...new Set(wks.map(w => w.date))].sort().reverse();
+    let streak = 0, check = new Date(); check.setHours(0,0,0,0);
+    for (const d of dates) {
+      if (d === check.toISOString().slice(0,10)) { streak++; check.setDate(check.getDate()-1); }
+      else break;
+    }
+    el('streakCount').textContent = streak || 7;
+  }
+
+  if (el('memberBadge')) {
+    el('memberBadge').textContent = (Session.getUser()?.plan || 'basic').toUpperCase();
   }
 }
 
 
 function toggleBilling() {
-  const isAnnual = document.getElementById('billingToggle')?.checked;
-  const lblMonthly = document.getElementById('lblMonthly');
-  const lblAnnual = document.getElementById('lblAnnual');
-
-  document.querySelectorAll('.plan-amount').forEach(el => {
-    const val = isAnnual ? el.dataset.annual : el.dataset.monthly;
-    el.textContent = parseInt(val).toLocaleString('en-IN');
+  const annual = el('billingToggle')?.checked;
+  document.querySelectorAll('.plan-amount').forEach(e => {
+    e.textContent = parseInt(annual ? e.dataset.annual : e.dataset.monthly).toLocaleString('en-IN');
   });
-
-  if (lblMonthly) lblMonthly.classList.toggle('toggle-active', !isAnnual);
-  if (lblAnnual) {
-    const span = lblAnnual.querySelector('.save-badge');
-    lblAnnual.childNodes[0].textContent = 'Annual ';
-    lblAnnual.classList.toggle('toggle-active', isAnnual);
-  }
+  el('lblMonthly')?.classList.toggle('toggle-active', !annual);
+  el('lblAnnual') ?.classList.toggle('toggle-active',  annual);
 }
 
-function selectPlan(planId, btn) {
-  const toast = document.getElementById('planToast');
-  const names = { basic: 'Basic', pro: 'Pro', elite: 'Elite' };
-  const isAnnual = document.getElementById('billingToggle')?.checked;
+function selectPlan(planId) {
+  const names  = { basic: 'Basic', pro: 'Pro', elite: 'Elite' };
+  const annual = el('billingToggle')?.checked;
 
+  Session.updateUser({ plan: planId });
 
-  const user = JSON.parse(localStorage.getItem('ip_user') || '{}');
-  user.plan = planId;
-  localStorage.setItem('ip_user', JSON.stringify(user));
+  const user  = Session.getUser();
+  const users = JSON.parse(localStorage.getItem('ip_users') || '[]');
+  const idx   = users.findIndex(u => u.email === user?.email);
+  if (idx > -1) { users[idx].plan = planId; localStorage.setItem('ip_users', JSON.stringify(users)); }
 
+  const toast = el('planToast');
   if (toast) {
-    toast.textContent = `✅ You've selected the ${names[planId]} plan (${isAnnual ? 'Annual' : 'Monthly'}). Redirecting to dashboard...`;
+    toast.textContent = `✅ ${names[planId]} plan selected (${annual ? 'Annual' : 'Monthly'}). Redirecting to dashboard...`;
     toast.classList.remove('hidden');
-    setTimeout(() => { window.location.href = 'dashboard.html'; }, 2000);
+    setTimeout(() => window.location.replace('dashboard.html'), 1800);
   }
 }
 
 
-function getWorkouts() {
-  return JSON.parse(localStorage.getItem('ip_workouts') || '[]');
-}
-function saveWorkouts(arr) {
-  localStorage.setItem('ip_workouts', JSON.stringify(arr));
-}
+function getWorkouts()    { return JSON.parse(localStorage.getItem('ip_workouts') || '[]'); }
+function saveWorkouts(a)  { localStorage.setItem('ip_workouts', JSON.stringify(a)); }
 
 function logWorkout() {
-  const type = document.getElementById('workoutType')?.value;
-  const duration = document.getElementById('workoutDuration')?.value;
-  const calories = document.getElementById('workoutCalories')?.value;
-  const date = document.getElementById('workoutDate')?.value;
-  const intensity = document.getElementById('workoutIntensity')?.value;
-  const notes = document.getElementById('workoutNotes')?.value;
+  const type      = el('workoutType')?.value;
+  const duration  = el('workoutDuration')?.value;
+  const calories  = el('workoutCalories')?.value;
+  const date      = el('workoutDate')?.value;
+  const intensity = el('workoutIntensity')?.value;
+  const notes     = el('workoutNotes')?.value?.trim();
 
   if (!type || !duration || !calories || !date) {
     showMsg('trackerMsg', '⚠ Please fill in all required fields.', 'error');
     return;
   }
 
-  const entry = {
-    id: Date.now(),
-    type, duration: parseInt(duration), calories: parseInt(calories),
-    date, intensity, notes
-  };
+  const entry = { id: Date.now(), type, duration: +duration, calories: +calories, date, intensity, notes };
+  const all   = getWorkouts();
+  all.push(entry);
+  saveWorkouts(all);
 
-  const workouts = getWorkouts();
-  workouts.push(entry);
-  saveWorkouts(workouts);
-
-  showMsg('trackerMsg', `✅ Workout logged! +${calories} calories burned. Keep it up! 🔥`, 'success');
+  showMsg('trackerMsg', `✅ Workout logged! +${calories} kcal burned. Keep it up! 🔥`, 'success');
   renderWorkoutLog();
   updateTrackerStats();
 
-  document.getElementById('workoutType').value = '';
-  document.getElementById('workoutDuration').value = '';
-  document.getElementById('workoutCalories').value = '';
-  document.getElementById('workoutNotes').value = '';
+  el('workoutType').value = el('workoutDuration').value = el('workoutCalories').value = el('workoutNotes').value = '';
 }
 
 function renderWorkoutLog() {
-  const container = document.getElementById('workoutLog');
-  if (!container) return;
-  const workouts = getWorkouts().reverse();
-
-  if (workouts.length === 0) {
-    container.innerHTML = '<p class="empty-state">No workouts logged yet. Add your first one! 💪</p>';
-    return;
-  }
-
-  container.innerHTML = workouts.map(w => `
+  const box = el('workoutLog');
+  if (!box) return;
+  const list = getWorkouts().slice().reverse();
+  if (!list.length) { box.innerHTML = '<p class="empty-state">No workouts logged yet. Add your first one! 💪</p>'; return; }
+  box.innerHTML = list.map(w => `
     <div class="log-entry" id="entry-${w.id}">
       <span class="log-entry-icon">${getIcon(w.type)}</span>
       <div class="log-entry-info">
-        <div class="log-entry-type">${w.type.replace(/^[^\s]+ /, '')}</div>
-        <div class="log-entry-meta">
-          ${w.date} · ${w.duration} min · ${w.calories} kcal
-          ${w.notes ? `· <em>${w.notes}</em>` : ''}
-        </div>
+        <div class="log-entry-type">${w.type.replace(/^[^\s]+\s/, '')}</div>
+        <div class="log-entry-meta">${w.date} · ${w.duration} min · ${w.calories} kcal${w.notes ? ` <em>· ${w.notes}</em>` : ''}</div>
       </div>
       <span class="intensity-badge intensity-${w.intensity}">${w.intensity}</span>
       <button class="log-entry-delete" onclick="deleteWorkout(${w.id})" title="Delete">✕</button>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
-function getIcon(type) {
-  const map = { 'Strength': '💪', 'Cardio': '🏃', 'Yoga': '🧘', 'Cycling': '🚴', 'Boxing': '🥊', 'Swimming': '🏊', 'CrossFit': '🏋️' };
-  for (const [k, v] of Object.entries(map)) {
-    if (type.includes(k)) return v;
-  }
+function getIcon(type = '') {
+  const map = { Strength:'💪', Cardio:'🏃', Running:'🏃', Yoga:'🧘', Cycling:'🚴', Boxing:'🥊', HIIT:'🥊', Swimming:'🏊', CrossFit:'🏋️' };
+  for (const [k, v] of Object.entries(map)) if (type.includes(k)) return v;
   return '⚡';
 }
 
-function deleteWorkout(id) {
-  const workouts = getWorkouts().filter(w => w.id !== id);
-  saveWorkouts(workouts);
-  renderWorkoutLog();
-  updateTrackerStats();
-}
+function deleteWorkout(id) { saveWorkouts(getWorkouts().filter(w => w.id !== id)); renderWorkoutLog(); updateTrackerStats(); }
 
 function clearWorkouts() {
-  if (confirm('Clear all workout history? This cannot be undone.')) {
-    saveWorkouts([]);
-    renderWorkoutLog();
-    updateTrackerStats();
-  }
+  if (confirm('Clear all workout history? This cannot be undone.')) { saveWorkouts([]); renderWorkoutLog(); updateTrackerStats(); }
 }
 
 function updateTrackerStats() {
-  const workouts = getWorkouts();
-  const now = new Date();
-  const month = now.getMonth(); const year = now.getFullYear();
+  const wks   = getWorkouts();
+  const now   = new Date();
+  const key   = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const mo    = wks.filter(w => w.date.startsWith(key));
 
-  const monthly = workouts.filter(w => {
-    const d = new Date(w.date);
-    return d.getMonth() === month && d.getFullYear() === year;
-  });
+  if (el('totalWorkouts')) el('totalWorkouts').textContent = mo.length;
+  if (el('totalMinutes'))  el('totalMinutes').textContent  = mo.reduce((s,w)=>s+w.duration, 0);
+  if (el('totalCalories')) el('totalCalories').textContent = mo.reduce((s,w)=>s+w.calories, 0);
 
-  const el = (id) => document.getElementById(id);
-  if (el('totalWorkouts')) el('totalWorkouts').textContent = monthly.length;
-  if (el('totalMinutes')) el('totalMinutes').textContent = monthly.reduce((s, w) => s + w.duration, 0);
-  if (el('totalCalories')) el('totalCalories').textContent = monthly.reduce((s, w) => s + w.calories, 0);
-
-
-  const weekStart = new Date(now);
-  weekStart.setDate(now.getDate() - now.getDay());
-  const thisWeek = workouts.filter(w => new Date(w.date) >= weekStart);
+  const ws = new Date(now); ws.setDate(now.getDate()-((now.getDay()+6)%7)); ws.setHours(0,0,0,0);
+  const tw = wks.filter(w => new Date(w.date) >= ws);
   const goal = parseInt(localStorage.getItem('ip_goal') || '5');
-  const pct = Math.min(100, (thisWeek.length / goal) * 100);
-
-  if (el('goalBar')) el('goalBar').style.width = pct + '%';
-  if (el('goalProgress')) el('goalProgress').textContent = `${thisWeek.length} / ${goal} completed`;
+  const pct  = Math.min(100, (tw.length / goal) * 100);
+  if (el('goalBar'))      el('goalBar').style.width     = pct + '%';
+  if (el('goalProgress')) el('goalProgress').textContent = `${tw.length} / ${goal} completed`;
 }
 
 function updateGoalTarget(val) {
   localStorage.setItem('ip_goal', val);
-  const label = document.getElementById('sliderLabel');
-  const target = document.getElementById('weeklyTarget');
-  if (label) label.textContent = `${val} days`;
-  if (target) target.textContent = `${val} workouts`;
+  if (el('sliderLabel'))  el('sliderLabel').textContent  = `${val} days`;
+  if (el('weeklyTarget')) el('weeklyTarget').textContent = `${val} workouts`;
   updateTrackerStats();
 }
 
-
 function setDateDefault() {
-  const d = document.getElementById('workoutDate');
-  if (d) {
-    const today = new Date().toISOString().split('T')[0];
-    d.value = today;
-    d.max = today;
-  }
+  const d = el('workoutDate');
+  if (d) { const t = new Date().toISOString().slice(0,10); d.value = t; d.max = t; }
 }
 
-
 function initGoalSlider() {
-  const slider = document.getElementById('goalSlider');
-  if (!slider) return;
-  const saved = parseInt(localStorage.getItem('ip_goal') || '5');
-  slider.value = saved;
-  updateGoalTarget(saved);
+  const s = el('goalSlider');
+  if (!s) return;
+  const v = parseInt(localStorage.getItem('ip_goal') || '5');
+  s.value = v;
+  updateGoalTarget(v);
 }
 
 
 document.addEventListener('DOMContentLoaded', () => {
-  const page = window.location.pathname.split('/').pop();
+  if (!Auth.init()) return;       
 
-  if (page === 'dashboard.html' || page === '') {
-    initDashboard();
-  }
-  if (page === 'tracker.html') {
-    setDateDefault();
-    renderWorkoutLog();
-    updateTrackerStats();
-    initGoalSlider();
-  }
+  const page = window.location.pathname.split('/').pop() || 'index.html';
+
+  if (page === 'dashboard.html')  initDashboard();
+  if (page === 'tracker.html')  { setDateDefault(); renderWorkoutLog(); updateTrackerStats(); initGoalSlider(); }
 });
