@@ -6,6 +6,39 @@
   <title>IronPulse — Login</title>
   <link rel="stylesheet" href="style.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    .role-selector { display:flex; gap:8px; margin-bottom:24px; }
+    .role-pill {
+      flex:1; display:flex; flex-direction:column; align-items:center; gap:5px;
+      padding:12px 8px; border-radius:var(--radius-sm);
+      background:var(--bg3); border:1px solid var(--border);
+      cursor:pointer; transition:all 0.25s; font-family:var(--font-body); color:var(--text-muted);
+    }
+    .role-pill:hover { border-color:var(--text-dim); color:var(--text); }
+    .role-pill .pill-icon { font-size:1.4rem; line-height:1; }
+    .role-pill .pill-label { font-size:0.7rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; }
+    .role-pill.member.active  { background:var(--accent-dim);  border-color:var(--accent); color:var(--accent); }
+    .role-pill.trainer.active { background:var(--blue-dim);    border-color:var(--blue);   color:var(--blue);   }
+    .role-pill.admin.active   { background:#1a0a2e; border-color:#a855f7; color:#a855f7; }
+
+    .role-hints { margin-top:16px; }
+    .role-hint {
+      display:none; font-size:0.78rem; padding:8px 12px;
+      border-radius:var(--radius-sm); background:var(--bg3); color:var(--text-muted);
+    }
+    .role-hint.active-hint { display:block; }
+    .role-hint b { color:var(--text); }
+    .hint-member.active-hint  { border-left:2px solid var(--accent); }
+    .hint-trainer.active-hint { border-left:2px solid var(--blue); }
+    .hint-admin.active-hint   { border-left:2px solid #a855f7; }
+
+    .btn-primary.btn-trainer { background:var(--blue); }
+    .btn-primary.btn-trainer:hover { background:#5b9af8; box-shadow:0 4px 20px rgba(59,130,246,0.3); }
+    .btn-primary.btn-admin   { background:#a855f7; }
+    .btn-primary.btn-admin:hover   { background:#c084fc; box-shadow:0 4px 20px rgba(168,85,247,0.3); }
+
+    .auth-left { transition:background 0.45s, border-color 0.45s; }
+  </style>
 </head>
 <body class="auth-body">
 
@@ -25,25 +58,41 @@
   </nav>
 
   <div class="auth-wrapper">
-    <div class="auth-left">
+
+    <div class="auth-left" id="authLeft">
       <div class="auth-left-content">
-        <p class="auth-quote-tag">MEMBER PORTAL</p>
-        <h2 class="auth-quote">PUSH<br/>YOUR<br/>LIMITS.</h2>
-        <p>Access your dashboard, track workouts, and manage your membership all in one place.</p>
+        <p class="auth-quote-tag" id="leftTag">MEMBER PORTAL</p>
+        <h2 class="auth-quote" id="leftQuote">PUSH<br/>YOUR<br/>LIMITS.</h2>
+        <p id="leftDesc">Access your dashboard, track workouts and manage your membership all in one place.</p>
       </div>
     </div>
 
     <div class="auth-right">
       <div class="auth-card">
 
-        <div class="auth-tabs">
-          <button class="auth-tab active" id="tabLogin" onclick="switchTab('login')">Login</button>
-          <button class="auth-tab" id="tabSignup" onclick="switchTab('signup')">Sign Up</button>
+        <div class="role-selector">
+          <button class="role-pill member active" onclick="setRole('member')">
+            <span class="pill-icon">🏋️</span>
+            <span class="pill-label">Member</span>
+          </button>
+          <button class="role-pill trainer" onclick="setRole('trainer')">
+            <span class="pill-icon">👟</span>
+            <span class="pill-label">Trainer</span>
+          </button>
+          <button class="role-pill admin" onclick="setRole('admin')">
+            <span class="pill-icon">🛡️</span>
+            <span class="pill-label">Admin</span>
+          </button>
+        </div>
+
+        <div id="authTabs" class="auth-tabs">
+          <button class="auth-tab active" id="tabLogin"  onclick="switchTab('login')">Login</button>
+          <button class="auth-tab"        id="tabSignup" onclick="switchTab('signup')">Sign Up</button>
         </div>
 
         <div id="loginForm">
-          <h3 class="form-title">Welcome Back</h3>
-          <p class="form-sub">Login to your IronPulse account</p>
+          <h3 class="form-title" id="loginTitle">Member Login</h3>
+          <p  class="form-sub"   id="loginSub">Login to your member account</p>
           <div id="loginMsg" class="form-msg hidden"></div>
 
           <div class="form-group">
@@ -63,13 +112,25 @@
             </label>
             <a href="#" class="form-link">Forgot password?</a>
           </div>
-          <button class="btn-primary full" onclick="handleLogin()">Login</button>
-          <p class="form-hint">Demo: <b>demo@ironpulse.com</b> / <b>demo123</b></p>
+
+          <button class="btn-primary full" id="loginBtn" onclick="handleLogin()">Login</button>
+
+          <div class="role-hints">
+            <div class="role-hint hint-member active-hint">
+              Demo: <b>member@gym.com</b> / <b>member123</b>
+            </div>
+            <div class="role-hint hint-trainer">
+              Demo: <b>trainer@gym.com</b> / <b>trainer123</b>
+            </div>
+            <div class="role-hint hint-admin">
+              Demo: <b>admin@gym.com</b> / <b>admin123</b>
+            </div>
+          </div>
         </div>
 
         <div id="signupForm" class="hidden">
           <h3 class="form-title">Create Account</h3>
-          <p class="form-sub">Join thousands of members today</p>
+          <p  class="form-sub">Join thousands of members today</p>
           <div id="signupMsg" class="form-msg hidden"></div>
 
           <div class="form-row-2">
@@ -79,7 +140,7 @@
             </div>
             <div class="form-group">
               <label>Last Name</label>
-              <input type="text" id="lastName" placeholder="Doe" class="form-input"/>
+              <input type="text" id="lastName"  placeholder="Doe"  class="form-input"/>
             </div>
           </div>
           <div class="form-group">
@@ -104,7 +165,7 @@
           <div class="form-group">
             <label class="checkbox-label">
               <input type="checkbox" id="agreeTerms"/>
-              I agree to the <a href="#" class="form-link">Terms & Conditions</a>
+              I agree to the <a href="#" class="form-link">Terms &amp; Conditions</a>
             </label>
           </div>
           <button class="btn-primary full" onclick="handleSignup()">Create Account</button>

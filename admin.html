@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IronPulse — Admin Panel</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+  <nav class="navbar" id="navbar">
+    <div class="nav-brand">
+      <a href="index.html" style="text-decoration:none;display:flex;align-items:center;gap:8px;">
+        <span class="brand-icon">⚡</span><span class="brand-text">IRONPULSE</span>
+      </a>
+    </div>
+    <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+    <ul class="nav-links" id="navLinks"></ul>
+  </nav>
+
+  <div class="page-wrapper">
+    <div class="container">
+
+      <div class="page-header">
+        <div>
+          <p class="section-tag" style="color:#a855f7">ADMIN PANEL</p>
+          <h1 class="page-title" id="adminGreeting">Good Morning, Admin! 🛡️</h1>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <button class="btn-ghost small" onclick="exportReport()">⬇ Export CSV</button>
+          <button class="btn-primary small" style="background:#a855f7;padding:8px 16px;font-size:0.85rem" onclick="openAddUserModal()">+ Add User</button>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-card-icon" style="background:#1a0a2a">👥</div>
+          <div>
+            <p class="stat-card-num" id="totalMembers">248</p>
+            <p class="stat-card-label">Total Members</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon" style="background:var(--blue-dim)">👟</div>
+          <div>
+            <p class="stat-card-num">14</p>
+            <p class="stat-card-label">Active Trainers</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon" style="background:#1a2a1a">💰</div>
+          <div>
+            <p class="stat-card-num">₹4.1L</p>
+            <p class="stat-card-label">Monthly Revenue</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon" style="background:#2a0a0a">⚠️</div>
+          <div>
+            <p class="stat-card-num">7</p>
+            <p class="stat-card-label">Expiring Soon</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-grid">
+
+        <div class="dash-card admin-wide">
+          <h3 class="card-title">Monthly Revenue (₹K)</h3>
+          <div class="activity-chart" id="revenueChart"></div>
+          <div class="chart-labels" id="revenueLabels"></div>
+        </div>
+
+        <div class="dash-card">
+          <h3 class="card-title">Plan Distribution</h3>
+          <div id="planDist" style="display:flex;flex-direction:column;gap:14px;margin-top:4px;"></div>
+        </div>
+
+        <div class="dash-card admin-wide">
+          <h3 class="card-title">Recent Activity</h3>
+          <div id="activityFeed" class="feed-list"></div>
+        </div>
+
+      </div>
+
+      <div class="dash-card" style="margin-top:24px;">
+        <div class="card-header-row" style="margin-bottom:20px;">
+          <h3 class="card-title" style="margin-bottom:0">All Users</h3>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <input type="text" id="memberSearch" class="form-input" placeholder="Search name / email…" style="width:200px;padding:8px 12px;font-size:0.85rem" oninput="filterMembers()"/>
+            <select id="roleFilter" class="form-input" style="width:130px;padding:8px 12px;font-size:0.85rem" onchange="filterMembers()">
+              <option value="">All Roles</option>
+              <option value="member">Member</option>
+              <option value="trainer">Trainer</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="compare-table admin-table">
+            <thead>
+              <tr>
+                <th style="text-align:left">User</th>
+                <th>Role</th>
+                <th>Plan</th>
+                <th>Status</th>
+                <th>Joined</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="membersBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="addUserModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Add New User</h3>
+        <button class="modal-close" onclick="closeModal('addUserModal')">✕</button>
+      </div>
+      <div id="addUserMsg" class="form-msg hidden"></div>
+      <div class="form-row-2">
+        <div class="form-group">
+          <label>First Name</label>
+          <input type="text" id="newUserFirst" class="form-input" placeholder="First"/>
+        </div>
+        <div class="form-group">
+          <label>Last Name</label>
+          <input type="text" id="newUserLast" class="form-input" placeholder="Last"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="newUserEmail" class="form-input" placeholder="user@example.com"/>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="newUserPass" class="form-input" placeholder="Min 6 characters"/>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group">
+          <label>Role</label>
+          <select id="newUserRole" class="form-input">
+            <option value="member">Member</option>
+            <option value="trainer">Trainer</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Plan</label>
+          <select id="newUserPlan" class="form-input">
+            <option value="basic">Basic</option>
+            <option value="pro">Pro</option>
+            <option value="elite">Elite</option>
+            <option value="staff">Staff</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-primary full" style="background:#a855f7" onclick="adminAddUser()">Create User</button>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand"><span class="brand-icon">⚡</span><span class="brand-text">IRONPULSE</span></div>
+      <p class="footer-copy">© 2025 IronPulse Gym. Built for champions.</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
